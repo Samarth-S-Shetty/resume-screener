@@ -17,9 +17,9 @@ An AI-powered web app that ranks job candidates by analyzing their resumes again
 ---
 ## Screenshots
 
-![Form](asset/form.png)
-![Results](asset/results.png)
-![Detail](asset/details.png)
+![Form](assest/form.png)
+![Results](assest/results.png)
+![Detail](assest/details.png)
 ---
 ## 🚀 Setup (5 minutes)
 
