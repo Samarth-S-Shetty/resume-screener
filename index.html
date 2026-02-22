@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Screener</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f2ec;
+      --ink:      #1a1814;
+      --muted:    #7a7060;
+      --accent:   #c84b2f;
+      --surface:  #edeae2;
+      --border:   #d4cfc5;
+      --green:    #2d6a4f;
+      --amber:    #b5560e;
+      --card:     #ffffff;
+    }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 2rem 1rem 6rem;
+    }
+
+    /* ── Layout ── */
+    .wrapper { max-width: 860px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header { margin-bottom: 3.5rem; padding-top: 1rem; }
+
+    .eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .subtitle {
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--ink);
+      resize: vertical;
+      min-height: 140px;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      margin-top: 1.5rem;
+      border: 2px dashed var(--border);
+      border-radius: 2px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: #fdf8f5;
+    }
+
+    .drop-icon { font-size: 2rem; margin-bottom: 0.6rem; }
+    .drop-text { font-size: 0.78rem; color: var(--muted); line-height: 1.8; }
+    .drop-text strong { color: var(--ink); }
+
+    #fileInput { display: none; }
+
+    /* ── File list ── */
+    #fileList {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .file-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: chipIn 0.2s ease;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .file-chip .remove {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    /* ── Submit button ── */
+    .btn {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.85rem 2rem;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:hover { background: var(--accent); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: var(--border); cursor: not-allowed; }
+
+    /* ── Status / loading ── */
+    #status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      min-height: 1.2em;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ── */
+    #results { margin-top: 2.5rem; }
+
+    .results-header {
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+    }
+
+    .results-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* ── Candidate card ── */
+    .candidate {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+      animation: cardIn 0.3s ease both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .candidate-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem 1.5rem;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: background 0.15s;
+    }
+    .candidate-header:hover { background: var(--surface); }
+
+    .rank {
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      font-style: italic;
+      color: var(--border);
+      width: 2rem;
+      flex-shrink: 0;
+    }
+    .rank-1 { color: #c9a84c; }
+    .rank-2 { color: #9ca3b0; }
+    .rank-3 { color: #b07c5a; }
+
+    .candidate-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 2px;
+      border: 1px solid;
+      flex-shrink: 0;
+    }
+
+    .badge-high  { color: var(--green);  border-color: var(--green);  background: #f0fdf6; }
+    .badge-med   { color: var(--amber);  border-color: var(--amber);  background: #fdf6f0; }
+    .badge-low   { color: var(--accent); border-color: var(--accent); background: #fdf0ef; }
+    .badge-no    { color: var(--muted);  border-color: var(--border); background: var(--surface); }
+    .badge-error { color: var(--accent); border-color: var(--accent); background: #fdf0ef; }
+
+    /* Score bar */
+    .score-wrap { display: flex; align-items: center; gap: 0.8rem; }
+    .score-num {
+      font-size: 0.78rem;
+      font-weight: 500;
+      min-width: 2.2rem;
+      text-align: right;
+    }
+    .score-bar-bg {
+      width: 80px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--ink);
+      transition: width 0.6s ease;
+    }
+
+    /* Expand arrow */
+    .expand-arrow {
+      font-size: 0.6rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .candidate.open .expand-arrow { transform: rotate(180deg); }
+
+    /* Detail panel */
+    .candidate-detail {
+      display: none;
+      padding: 1.2rem 1.5rem 1.5rem 4.5rem;
+      border-top: 1px solid var(--border);
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .candidate.open .candidate-detail { display: block; }
+
+    .detail-summary {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .detail-section { margin-bottom: 0.8rem; }
+
+    .detail-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    .tag {
+      font-size: 0.68rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tag.strength { border-color: var(--green); color: var(--green); background: #f0fdf6; }
+    .tag.gap      { border-color: var(--amber); color: var(--amber); background: #fdf6f0; }
+
+    /* ── Error banner ── */
+    .error-banner {
+      background: #fdf0ef;
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      padding: 1rem 1.2rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .candidate-header { flex-wrap: wrap; }
+      .score-wrap { order: 3; width: 100%; margin-left: 3rem; }
+      .candidate-detail { padding-left: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <p class="eyebrow">AI-Powered Tool</p>
+    <h1>Resume<br><em>Screener</em></h1>
+    <p class="subtitle">
+      Upload candidate PDFs and paste a job description. 
+      GPT-4o-mini analyzes each resume and returns a ranked shortlist in seconds.
+    </p>
+  </header>
+
+  <!-- ── Form ── -->
+  <div class="form-card">
+    <label class="field-label" for="jdInput">Job Description</label>
+    <textarea id="jdInput" placeholder="Paste the full job description here — responsibilities, requirements, nice-to-haves…"></textarea>
+
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">📄</div>
+      <div class="drop-text">
+        <strong>Drop PDF resumes here</strong><br>
+        or click to browse — multiple files supported
+      </div>
+      <input type="file" id="fileInput" accept=".pdf" multiple />
+    </div>
+
+    <div id="fileList"></div>
+
+    <button class="btn" id="submitBtn" onclick="screenResumes()">
+      Analyse Resumes →
+    </button>
+
+    <div id="status"></div>
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results"></div>
+
+</div>
+
+<script>
+  // ── File management ──────────────────────────────────────────────────────────
+  let selectedFiles = [];
+
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput  = document.getElementById('fileInput');
+  const fileList   = document.getElementById('fileList');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    addFiles([...e.dataTransfer.files]);
+  });
+
+  fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+
+  function addFiles(newFiles) {
+    const pdfs = newFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    pdfs.forEach(f => {
+      if (!selectedFiles.find(x => x.name === f.name)) {
+        selectedFiles.push(f);
+      }
+    });
+    renderFileList();
+  }
+
+  function removeFile(name) {
+    selectedFiles = selectedFiles.filter(f => f.name !== name);
+    renderFileList();
+  }
+
+  function renderFileList() {
+    fileList.innerHTML = selectedFiles.map(f => `
+      <div class="file-chip">
+        📄 ${f.name}
+        <span class="remove" onclick="removeFile('${f.name}')">✕</span>
+      </div>
+    `).join('');
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
+  async function screenResumes() {
+    const jd   = document.getElementById('jdInput').value.trim();
+    const btn  = document.getElementById('submitBtn');
+    const stat = document.getElementById('status');
+    const res  = document.getElementById('results');
+
+    if (!jd) return alert('Please enter a job description.');
+    if (selectedFiles.length === 0) return alert('Please upload at least one PDF resume.');
+
+    btn.disabled = true;
+    stat.innerHTML = `<span class="spinner"></span> Analysing ${selectedFiles.length} resume(s) — this may take ~${selectedFiles.length * 5}s…`;
+    res.innerHTML  = '';
+
+    // Build multipart form data
+    const formData = new FormData();
+    formData.append('job_description', jd);
+    selectedFiles.forEach(f => formData.append('resumes', f));
+
+    try {
+      const response = await fetch('/screen', { method: 'POST', body: formData });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || `Server error ${response.status}`);
+      }
+
+      const data = await response.json();
+      renderResults(data.candidates);
+      stat.textContent = `✓ Done — ${data.candidates.length} candidate(s) ranked`;
+
+    } catch (err) {
+      stat.textContent = '';
+      res.innerHTML = `<div class="error-banner">⚠ Error: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Render results ───────────────────────────────────────────────────────────
+  function renderResults(candidates) {
+    const res = document.getElementById('results');
+
+    res.innerHTML = `
+      <div class="results-header">
+        Ranked Candidates
+        <span class="results-count">${candidates.length} total</span>
+      </div>
+    `;
+
+    candidates.forEach((c, i) => {
+      const rank   = i + 1;
+      const rankClass = rank <= 3 ? `rank-${rank}` : '';
+      const hasError  = !!c.error;
+
+      // Badge
+      const badgeMap = {
+        'Highly Recommended': ['High Match', 'badge-high'],
+        'Recommended':        ['Good Match', 'badge-med'],
+        'Maybe':              ['Partial Match', 'badge-low'],
+        'Not Recommended':    ['Low Match', 'badge-no'],
+      };
+      const [badgeLabel, badgeClass] = hasError
+        ? ['Error', 'badge-error']
+        : (badgeMap[c.recommendation] || ['Unrated', 'badge-no']);
+
+      // Score bar fill color
+      const score = c.score || 0;
+      const fillColor = score >= 70 ? '#2d6a4f' : score >= 45 ? '#b5560e' : '#c84b2f';
+
+      const card = document.createElement('div');
+      card.className = 'candidate';
+      card.style.animationDelay = `${i * 60}ms`;
+      card.innerHTML = `
+        <div class="candidate-header" onclick="toggleCard(this)">
+          <div class="rank ${rankClass}">${rank}</div>
+          <div class="candidate-name">${c.name || c.filename || 'Unknown'}</div>
+          ${hasError ? '' : `
+          <div class="score-wrap">
+            <div class="score-num">${score}</div>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" style="width:${score}%; background:${fillColor}"></div>
+            </div>
+          </div>`}
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+          <span class="expand-arrow">▼</span>
+        </div>
+
+        <div class="candidate-detail">
+          ${hasError
+            ? `<p class="detail-summary" style="color:var(--accent)">${c.error}</p>`
+            : `
+            <p class="detail-summary">${c.summary || 'No summary available.'}</p>
+
+            ${c.strengths?.length ? `
+            <div class="detail-section">
+              <div class="detail-title">Strengths</div>
+              <div class="tag-list">
+                ${c.strengths.map(s => `<span class="tag strength">✓ ${s}</span>`).join('')}
+              </div>
+            </div>` : ''}
+
+            ${c.gaps?.length ? `
+            <div class="detail-section">
+              <div class="detail-title">Gaps / Concerns</div>
+              <div class="tag-list">
+                ${c.gaps.map(g => `<span class="tag gap">⚠ ${g}</span>`).join('')}
+              </div>
+            </div>` : ''}
+          `}
+        </div>
+      `;
+
+      res.appendChild(card);
+    });
+  }
+
+  function toggleCard(header) {
+    const card = header.parentElement;
+    card.classList.toggle('open');
+  }
+</script>
+</body>
+</html>
